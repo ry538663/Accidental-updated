@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import Navbar from './Navbar';
+import Footer from './Footer';
+
 
 function AmbulanceTracker() {
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -7,6 +10,7 @@ function AmbulanceTracker() {
   const [route, setRoute] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [ambulanceStatus, setAmbulanceStatus] = useState('disconnected');
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const wsRef = useRef(null);
@@ -149,12 +153,34 @@ function AmbulanceTracker() {
     googleMapRef.current.fitBounds(bounds);
   };
 
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      setIsGettingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          document.getElementById('dest-lat').value = lat.toFixed(6);
+          document.getElementById('dest-lng').value = lng.toFixed(6);
+          setIsGettingLocation(false);
+          alert('✅ Current location set as destination!');
+        },
+        (error) => {
+          setIsGettingLocation(false);
+          alert('❌ Error getting location: ' + error.message);
+        }
+      );
+    } else {
+      alert('❌ Geolocation is not supported by this browser.');
+    }
+  };
+
   const setDestinationHandler = async () => {
     const lat = parseFloat(document.getElementById('dest-lat').value);
     const lng = parseFloat(document.getElementById('dest-lng').value);
 
     if (isNaN(lat) || isNaN(lng)) {
-      alert('Please enter valid coordinates');
+      alert('❌ Please enter valid coordinates');
       return;
     }
 
@@ -168,12 +194,12 @@ function AmbulanceTracker() {
       });
 
       if (response.ok) {
-        alert('Destination set successfully!');
+        alert('✅ Destination set successfully!');
       } else {
-        alert('Error setting destination');
+        alert('❌ Error setting destination');
       }
     } catch (error) {
-      alert('Error: ' + error.message);
+      alert('❌ Error: ' + error.message);
     }
   };
 
@@ -187,12 +213,14 @@ function AmbulanceTracker() {
         drawRoute(data.route);
       }
     } catch (error) {
-      alert('Error getting route: ' + error.message);
+      alert('❌ Error getting route: ' + error.message);
     }
   };
 
   return (
     <div className="App">
+      <Navbar />
+      
       <header className="app-header">
         <h1>🚑 Ambulance Tracking System</h1>
         <div className="status-indicators">
@@ -208,7 +236,7 @@ function AmbulanceTracker() {
       <div className="main-container">
         <div className="controls-panel">
           <div className="control-section">
-            <h3>Set Destination</h3>
+            <h3>📍 Set Accident/Patient Location</h3>
             <div className="input-group">
               <label>Latitude:</label>
               <input type="number" id="dest-lat" step="any" placeholder="28.6139" />
@@ -217,23 +245,42 @@ function AmbulanceTracker() {
               <label>Longitude:</label>
               <input type="number" id="dest-lng" step="any" placeholder="77.2090" />
             </div>
-            <button onClick={setDestinationHandler} className="btn-primary">
-              Set Destination
+            <div className="button-group">
+              <button
+                onClick={getCurrentLocation}
+                className="btn-location"
+                disabled={isGettingLocation}
+              >
+                {isGettingLocation ? '📍 Getting Location...' : '📍 Use My Location'}
+              </button>
+              <button onClick={setDestinationHandler} className="btn-primary">
+                🚑 Set as Destination
+              </button>
+            </div>
+          </div>
+
+          <div className="control-section">
+            <h3>📊 Current Status</h3>
+            <div className="status-info">
+              <p><strong>🚑 Ambulance Location:</strong></p>
+              <p>{currentLocation ? `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}` : 'Not available'}</p>
+
+              <p><strong>🏥 Patient Location:</strong></p>
+              <p>{destination ? `${destination.lat.toFixed(6)}, ${destination.lng.toFixed(6)}` : 'Not set'}</p>
+            </div>
+            <button onClick={getCurrentRoute} className="btn-secondary">
+              🗺️ Get Current Route
             </button>
           </div>
 
           <div className="control-section">
-            <h3>Current Status</h3>
-            <div className="status-info">
-              <p><strong>Ambulance Location:</strong></p>
-              <p>{currentLocation ? `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}` : 'Not available'}</p>
-
-              <p><strong>Destination:</strong></p>
-              <p>{destination ? `${destination.lat.toFixed(6)}, ${destination.lng.toFixed(6)}` : 'Not set'}</p>
+            <h3>📝 Instructions</h3>
+            <div className="instructions">
+              <p>1. 📍 Click "Use My Location" to set your current location as the accident site</p>
+              <p>2. 🚑 Or manually enter the accident coordinates</p>
+              <p>3. 🗺️ The system will show the optimal route from ambulance to patient</p>
+              <p>4. 📡 Real-time tracking will show ambulance movement</p>
             </div>
-            <button onClick={getCurrentRoute} className="btn-secondary">
-              Get Current Route
-            </button>
           </div>
         </div>
 
@@ -242,9 +289,7 @@ function AmbulanceTracker() {
         </div>
       </div>
 
-      <footer className="app-footer">
-        <p>Ambulance Tracking System - Real-time location monitoring and route optimization</p>
-      </footer>
+      <Footer />
     </div>
   );
 }

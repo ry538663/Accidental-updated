@@ -15,7 +15,7 @@
 1. **index.js** - Main entry point for the React application
 2. **index_new.js** - Updated version of the main entry point
 3. **App.js** - Main React component (original version)
-4. **App_new.js** - Updated main React component
+4. **App_new.js** - Updated main React component 
 5. **App_fixed.js** - Bug-fixed version of main component
 6. **App_test.js** - Testing version of main component
 7. **App_leaflet.js** - Leaflet map integration version

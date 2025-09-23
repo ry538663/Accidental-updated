@@ -2,6 +2,29 @@
   text-align: center;
 }
 
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+
+.map-container {
+  flex: 1;
+  position: relative;
+}
+
+.google-map {
+  width: 100%;
+  height: 100%;
+}
+
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

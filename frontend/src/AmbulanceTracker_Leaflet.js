@@ -3,6 +3,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './AmbulanceTracker.css';
 
+import Navbar from './Navbar';
+import Footer from './Footer';
+
+
 // Fix for default markers in Leaflet with Webpack
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -370,7 +374,10 @@ function AmbulanceTracker() {
   };
 
   return (
+
+    
     <div className="App">
+          <Navbar />
       <header className="app-header">
         <h1>🚑 Ambulance Tracking System</h1>
         <div className="status-indicators">
@@ -439,12 +446,13 @@ function AmbulanceTracker() {
           <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: '500px' }} />
         </div>
       </div>
-
+      <Footer />
       <footer className="app-footer">
         <p>Ambulance Tracking System - Real-time location monitoring and route optimization</p>
         <p><small>Powered by OpenStreetMap (No API Key Required)</small></p>
       </footer>
     </div>
+
   );
 }
 
