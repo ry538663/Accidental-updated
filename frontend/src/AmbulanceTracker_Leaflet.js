@@ -5,6 +5,7 @@ import './AmbulanceTracker.css';
 
 import Navbar from './Navbar';
 import Footer from './Footer';
+import IncidentForm from './IncidentForm';
 
 
 // Fix for default markers in Leaflet with Webpack
@@ -441,11 +442,14 @@ function AmbulanceTracker() {
             </div>
           </div>
         </div>
+          
 
         <div className="map-container">
           <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: '500px' }} />
         </div>
       </div>
+       <IncidentForm />
+   
       <Footer />
       <footer className="app-footer">
         <p>Ambulance Tracking System - Real-time location monitoring and route optimization</p>
