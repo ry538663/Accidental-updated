@@ -13,7 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 CORS(app, origins=["*"])
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize Google Maps client
 gmaps = googlemaps.Client(key=os.getenv("GOOGLE_MAPS_API_KEY"))
