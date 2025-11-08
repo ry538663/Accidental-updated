@@ -1,6 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import json
 import asyncio
 import googlemaps
@@ -8,7 +7,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
 # Load environment variables
 load_dotenv()
@@ -127,7 +126,8 @@ async def update_incident(incident_id: int, incident_update: IncidentUpdate):
         return {"error": "Incident not found"}
 
     # Update only provided fields
-    for field, value in incident_update.dict(exclude_unset=True).items():
+    update_data = incident_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
         incident[field] = value
 
     return {"message": "Incident updated successfully", "incident": incident}
