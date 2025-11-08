@@ -1,8 +1,8 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-websockets==10.0
-python-multipart==0.0.5
-pydantic==1.6.2
+flask==3.0.0
+flask-socketio==5.3.6
+flask-cors==4.0.0
+python-socketio==5.10.0
 requests==2.31.0
 python-dotenv==1.0.0
-googlemaps==4.4.5
+googlemaps==4.10.0
+eventlet==0.33.3
