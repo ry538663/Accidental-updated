@@ -1,0 +1,18 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  CI = "false"
+  ESLINT_NO_DEV_ERRORS = "true"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-render-backend-url.com/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/ws/*"
+  to = "wss://your-render-backend-url.com/ws/:splat"
+  status = 200

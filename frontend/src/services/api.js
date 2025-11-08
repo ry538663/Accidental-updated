@@ -1,14 +1,14 @@
 // API service for incident management
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = "https://accidental-updated.onrender.com/api";
 
 export const incidentAPI = {
   // Create a new incident
   create: async (incidentData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/incidents`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(incidentData),
       });
@@ -19,7 +19,7 @@ export const incidentAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error creating incident:', error);
+      console.error("Error creating incident:", error);
       throw error;
     }
   },
@@ -28,9 +28,9 @@ export const incidentAPI = {
   getAll: async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/incidents`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -40,7 +40,7 @@ export const incidentAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching incidents:', error);
+      console.error("Error fetching incidents:", error);
       throw error;
     }
   },
@@ -49,9 +49,9 @@ export const incidentAPI = {
   update: async (id, incidentData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/incidents/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(incidentData),
       });
@@ -62,7 +62,7 @@ export const incidentAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error updating incident:', error);
+      console.error("Error updating incident:", error);
       throw error;
     }
   },
@@ -71,9 +71,9 @@ export const incidentAPI = {
   delete: async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/incidents/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -83,10 +83,10 @@ export const incidentAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error deleting incident:', error);
+      console.error("Error deleting incident:", error);
       throw error;
     }
-  }
+  },
 };
 
 // API service for ambulance tracking
@@ -95,9 +95,9 @@ export const ambulanceAPI = {
   setDestination: async (lat, lng) => {
     try {
       const response = await fetch(`${API_BASE_URL}/set-destination`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ lat, lng }),
       });
@@ -108,7 +108,7 @@ export const ambulanceAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error setting destination:', error);
+      console.error("Error setting destination:", error);
       throw error;
     }
   },
@@ -117,9 +117,9 @@ export const ambulanceAPI = {
   getRoute: async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/get-route`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -129,8 +129,8 @@ export const ambulanceAPI = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error getting route:', error);
+      console.error("Error getting route:", error);
       throw error;
     }
-  }
+  },
 };
