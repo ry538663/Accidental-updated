@@ -40,18 +40,18 @@ incident_id_counter = 1
 
 # Pydantic models
 class IncidentCreate(BaseModel):
-    type: str
-    location: str
-    description: str
-    caller_name: Optional[str] = None
-    caller_phone: Optional[str] = None
+    type = str
+    location = str
+    description = str
+    caller_name = Optional[str]
+    caller_phone = Optional[str]
 
 class IncidentUpdate(BaseModel):
-    type: Optional[str] = None
-    location: Optional[str] = None
-    description: Optional[str] = None
-    caller_name: Optional[str] = None
-    caller_phone: Optional[str] = None
+    type = Optional[str]
+    location = Optional[str]
+    description = Optional[str]
+    caller_name = Optional[str]
+    caller_phone = Optional[str]
 
 class ConnectionManager:
     def __init__(self):
