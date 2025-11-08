@@ -380,7 +380,7 @@ function AmbulanceTracker() {
     <div className="App">
           <Navbar />
       <header className="app-header">
-        <h1>🚑 Ambulance Tracking System</h1>
+        <h1>🚑 Emergency  Dispatch  Optimization </h1>
         <div className="status-indicators">
           <div className={`status ${wsConnected ? 'connected' : 'disconnected'}`}>
             WebSocket: {wsConnected ? '🟢 Connected' : '🔴 Disconnected'}
