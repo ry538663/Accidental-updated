@@ -11,7 +11,18 @@ export const incidentAPI = {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(incidentData),
+        body: JSON.stringify({
+          // include new structured fields expected by backend
+          type: incidentData.type,
+          location: incidentData.location,
+          description: incidentData.description,
+          caller_name: incidentData.caller_name,
+          caller_phone: incidentData.caller_phone,
+          patient_lat: incidentData.patient_lat,
+          patient_lng: incidentData.patient_lng,
+          hardware_sensor_id: incidentData.hardware_sensor_id,
+          emergency_level: incidentData.emergency_level,
+        }),
       });
 
       if (!response.ok) {
@@ -87,6 +98,32 @@ export const incidentAPI = {
       console.error("Error deleting incident:", error);
       throw error;
     }
+  },
+};
+
+// Hospital related client calls
+export const hospitalAPI = {
+  lookupNearest: async ({ lat, lng, emergency_level, max_results = 5 }) => {
+    const resp = await fetch(`${API_BASE_URL}/hospitals/lookup-nearest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat, lng, emergency_level, max_results }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  },
+
+  reserveBed: async (hospital_id, payload) => {
+    const resp = await fetch(
+      `${API_BASE_URL}/hospitals/${hospital_id}/reserve-bed`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   },
 };
 

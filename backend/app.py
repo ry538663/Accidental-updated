@@ -12,6 +12,8 @@ load_dotenv()
 
 from backend.config import SQLALCHEMY_DATABASE_URI, SECRET_KEY, GOOGLE_MAPS_API_KEY
 from backend.super_model import db, Incident
+from backend.config import ADMIN_TOKEN
+from backend.mongo import get_db
 
 try:
     import redis
@@ -57,6 +59,74 @@ def root():
 @app.route("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.route('/admin/mongo-stats', methods=['GET'])
+def admin_mongo_stats():
+    """Return collection counts and a few sample documents. Protected by ADMIN_TOKEN header."""
+    token = request.headers.get('X-ADMIN-TOKEN')
+    if not token or token != ADMIN_TOKEN:
+        return jsonify({'error': 'unauthorized'}), 401
+
+    try:
+        dbu = get_db()
+        names = dbu.list_collection_names()
+        stats = {}
+        for n in names:
+            stats[n] = dbu[n].count_documents({})
+
+        # include one sample doc per collection (for quick debug)
+        samples = {}
+        for n in names:
+            doc = dbu[n].find_one()
+            samples[n] = doc
+
+        return jsonify({'counts': stats, 'samples': samples})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hospitals/lookup-nearest', methods=['POST'])
+def hospitals_lookup_nearest():
+    """Simple hospital lookup stub. Returns sample hospitals ranked by distance.
+    In production this should query Postgres hospitals table and compute distance/eta.
+    """
+    payload = request.get_json() or {}
+    lat = payload.get('lat')
+    lng = payload.get('lng')
+    max_results = int(payload.get('max_results', 5))
+
+    # TODO: replace with real geo queries against hospitals table
+    sample = [
+        {'id': 1, 'name': 'St Mary Hospital', 'distance_m': 1200, 'eta_min': 5, 'available_beds': {'emergency': 2}},
+        {'id': 2, 'name': 'City General', 'distance_m': 2400, 'eta_min': 8, 'available_beds': {'emergency': 1}}
+    ]
+    return jsonify({'hospitals': sample[:max_results]})
+
+
+@app.route('/api/hospitals/<int:hospital_id>/reserve-bed', methods=['POST'])
+def hospitals_reserve_bed(hospital_id):
+    data = request.get_json() or {}
+    incident_id = data.get('incident_id')
+    ambulance_id = data.get('ambulance_id')
+    requested_bed_type = data.get('requested_bed_type', 'emergency')
+
+    # naive reservation stub: return reserved with expiry 15 minutes from now
+    from datetime import datetime, timedelta
+    reserved = {
+        'status': 'reserved',
+        'bed_number': 'E-14',
+        'reservation_expires': (datetime.utcnow() + timedelta(minutes=15)).isoformat() + 'Z'
+    }
+
+    try:
+        # write event to hospital_event_log in MongoDB for audit
+        dbu = get_db()
+        dbu.hospital_event_log.insert_one({'hospital_id': hospital_id, 'events': [{'ts': datetime.utcnow(), 'type': 'bed_reserved', 'bed_number': reserved['bed_number'], 'incident_id': incident_id}]})
+    except Exception:
+        pass
+
+    return jsonify(reserved)
 
 # Incident management endpoints
 @app.route("/api/incidents", methods=["POST"])

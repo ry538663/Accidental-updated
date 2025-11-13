@@ -5,6 +5,13 @@ load_dotenv()
 
 # MongoDB
 MONGODB_URI = os.getenv('MONGODB_URI')
+MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', os.getenv('MONGODB_DB', 'hospital_unstructured'))
+
+# Admin
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', 'change-me-admin-token')
+
+# Redis
+REDIS_URL = os.getenv('REDIS_URL')
 
 # Postgres
 SQLALCHEMY_DATABASE_URI = os.getenv('POSTGRESQL_URI')
