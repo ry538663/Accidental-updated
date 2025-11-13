@@ -1,0 +1,8 @@
+# Render backend build & runtime configuration
+# Render will read this file to understand how to build and run the app
+
+# Build command (installs dependencies)
+build_command = "pip install -r requirements.txt"
+
+# Start command (runs the Flask app)
+start_command = "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app"

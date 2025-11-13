@@ -53,11 +53,11 @@ const Footer = () => {
         
         <div className="footer-section">
           <h4>Contact Info</h4>
-          <div className="contact-info">
+          {/* <div className="contact-info">
             <p><i className="fas fa-map-marker-alt"></i> 123 Medical Way, Health City</p>
             <p><i className="fas fa-phone"></i> +1 (234) 567-8900 (Emergency)</p>
             <p><i className="fas fa-envelope"></i> support@ambulancetracker.com</p>
-          </div>
+          </div> */}
         </div>
       </div>
       

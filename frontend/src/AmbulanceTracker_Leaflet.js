@@ -404,15 +404,15 @@ function AmbulanceTracker() {
       <header className="app-header">
         <h1>🚑 Emergency Dispatch Optimization </h1>
         <div className="status-indicators">
-          <div
+          {/* <div
             className={`status ${wsConnected ? "connected" : "disconnected"}`}
           >
             WebSocket: {wsConnected ? "🟢 Connected" : "🔴 Disconnected"}
-          </div>
-          <div className={`status ${ambulanceStatus}`}>
+          </div> */}
+          {/* <div className={`status ${ambulanceStatus}`}>
             Ambulance:{" "}
             {ambulanceStatus === "connected" ? "🟢 Online" : "🔴 Offline"}
-          </div>
+          </div> */}
         </div>
       </header>
 

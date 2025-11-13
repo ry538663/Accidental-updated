@@ -7,28 +7,48 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (supports .env and .env.local)
 load_dotenv()
 
+from backend.config import SQLALCHEMY_DATABASE_URI, SECRET_KEY, GOOGLE_MAPS_API_KEY
+from backend.super_model import db, Incident
+
+try:
+    import redis
+except Exception:
+    redis = None
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SECRET_KEY'] = SECRET_KEY or os.getenv('FLASK_SECRET_KEY', 'change-me')
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI or os.getenv('POSTGRESQL_URI')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, origins=["*"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize Google Maps client
-gmaps = googlemaps.Client(key=os.getenv("GOOGLE_MAPS_API_KEY"))
+gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY or os.getenv("GOOGLE_MAPS_API_KEY"))
+
+# initialize SQLAlchemy
+db.init_app(app)
+
+# Redis publisher (optional)
+REDIS_URL = os.getenv('REDIS_URL')
+redis_client = None
+if redis and REDIS_URL:
+    try:
+        redis_client = redis.from_url(REDIS_URL)
+    except Exception as e:
+        print(f"Warning: cannot connect to Redis at {REDIS_URL}: {e}")
 
 # Store connected clients and ambulance data
 connected_clients = set()
 ambulance_data = {
-    "current_location": None,
+    "current_location": None, 
     "destination": None,
     "route": None
 }
 
-# In-memory storage for incidents (in production, use a database)
-incidents_db = []
-incident_id_counter = 1
+# note: incidents persisted to Postgres via SQLAlchemy (see create_incident endpoint)
 
 @app.route("/")
 def root():
@@ -41,70 +61,114 @@ def health_check():
 # Incident management endpoints
 @app.route("/api/incidents", methods=["POST"])
 def create_incident():
-    """Create a new incident"""
-    global incident_id_counter
-
+    """Create a new incident and persist to Postgres. Publish `incident.created` to Redis if configured."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    new_incident = {
-        "id": incident_id_counter,
-        "type": data.get("type"),
-        "location": data.get("location"),
-        "description": data.get("description"),
-        "caller_name": data.get("caller_name"),
-        "caller_phone": data.get("caller_phone"),
-        "created_at": datetime.now().isoformat(),
-        "status": "reported"
-    }
+    # map incoming fields to model
+    incident = Incident(
+        type=data.get('type'),
+        description=data.get('description'),
+        location_text=data.get('location') or data.get('location_text'),
+        caller_name=data.get('caller_name'),
+        caller_phone=data.get('caller_phone'),
+        patient_lat=data.get('patient_lat'),
+        patient_lng=data.get('patient_lng'),
+        hardware_sensor_id=data.get('hardware_sensor_id'),
+        emergency_level=data.get('emergency_level', 'medium'),
+        status=data.get('status', 'reported')
+    )
 
-    incidents_db.append(new_incident)
-    incident_id_counter += 1
+    try:
+        with app.app_context():
+            db.session.add(incident)
+            db.session.commit()
+            incident_id = incident.id
 
-    return jsonify({"message": "Incident created successfully", "incident": new_incident})
+            # publish minimal event to Redis if configured
+            event_payload = {
+                'incident_id': incident_id,
+                'lat': incident.patient_lat,
+                'lng': incident.patient_lng,
+                'emergency_level': incident.emergency_level,
+                'assigned_ambulance_id': incident.assigned_ambulance_id
+            }
+            if redis_client:
+                try:
+                    redis_client.publish('incident.created', json.dumps(event_payload))
+                except Exception as e:
+                    print(f"Warning: failed to publish to Redis: {e}")
+
+            return jsonify({"message": "Incident created successfully", "incident_id": incident_id}), 201
+
+    except Exception as e:
+        # rollback on error
+        with app.app_context():
+            db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents", methods=["GET"])
 def get_incidents():
-    """Get all incidents"""
-    return jsonify({"incidents": incidents_db})
+    """Get recent incidents from database (limited preview)"""
+    try:
+        with app.app_context():
+            rows = Incident.query.order_by(Incident.created_at.desc()).limit(100).all()
+            return jsonify({"incidents": [r.to_dict() for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/<int:incident_id>", methods=["GET"])
 def get_incident(incident_id):
-    """Get a specific incident"""
-    incident = next((inc for inc in incidents_db if inc["id"] == incident_id), None)
-    if not incident:
-        return jsonify({"error": "Incident not found"}), 404
-    return jsonify({"incident": incident})
+    """Get a specific incident from DB"""
+    try:
+        with app.app_context():
+            inc = Incident.query.get(incident_id)
+            if not inc:
+                return jsonify({"error": "Incident not found"}), 404
+            return jsonify({"incident": inc.to_dict()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/<int:incident_id>", methods=["PUT"])
 def update_incident(incident_id):
-    """Update an incident"""
-    incident = next((inc for inc in incidents_db if inc["id"] == incident_id), None)
-    if not incident:
-        return jsonify({"error": "Incident not found"}), 404
-
+    """Update an incident in DB (partial update)"""
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    # Update only provided fields
-    for field, value in data.items():
-        if field in incident:
-            incident[field] = value
+    try:
+        with app.app_context():
+            inc = Incident.query.get(incident_id)
+            if not inc:
+                return jsonify({"error": "Incident not found"}), 404
 
-    return jsonify({"message": "Incident updated successfully", "incident": incident})
+            for k, v in data.items():
+                if hasattr(inc, k):
+                    setattr(inc, k, v)
+
+            db.session.commit()
+            return jsonify({"message": "Incident updated successfully", "incident": inc.to_dict()})
+    except Exception as e:
+        with app.app_context():
+            db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/incidents/<int:incident_id>", methods=["DELETE"])
 def delete_incident(incident_id):
-    """Delete an incident"""
-    global incidents_db
-    incident = next((inc for inc in incidents_db if inc["id"] == incident_id), None)
-    if not incident:
-        return jsonify({"error": "Incident not found"}), 404
-
-    incidents_db = [inc for inc in incidents_db if inc["id"] != incident_id]
-    return jsonify({"message": "Incident deleted successfully"})
+    """Delete an incident (DB)"""
+    try:
+        with app.app_context():
+            inc = Incident.query.get(incident_id)
+            if not inc:
+                return jsonify({"error": "Incident not found"}), 404
+            db.session.delete(inc)
+            db.session.commit()
+            return jsonify({"message": "Incident deleted successfully"})
+    except Exception as e:
+        with app.app_context():
+            db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/set-destination", methods=["POST"])
 def set_destination():

@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Map ↔ Hospital API
+  version: '1.0.0'
+  description: API surface for incident creation, hospital lookup and bed reservation
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/incidents:
+    post:
+      summary: Create an incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                location:
+                  type: string
+                patient_lat:
+                  type: number
+                patient_lng:
+                  type: number
+                caller_name:
+                  type: string
+                caller_phone:
+                  type: string
+                emergency_level:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incident_id:
+                    type: integer
+  /api/hospitals/lookup-nearest:
+    post:
+      summary: Lookup nearest hospitals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat: { type: number }
+                lng: { type: number }
+                emergency_level: { type: string }
+                max_results: { type: integer }
+      responses:
+        '200':
+          description: list of hospitals
+  /api/hospitals/{hospital_id}/reserve-bed:
+    post:
+      summary: Reserve a bed
+      parameters:
+        - in: path
+          name: hospital_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incident_id: { type: integer }
+                ambulance_id: { type: string }
+                requested_bed_type: { type: string }
+                expected_arrival: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Reservation result
+  /api/hospitals/sync-incident:
+    post:
+      summary: Sync an incident to hospital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incident_id: { type: integer }
+                ambulance_id: { type: string }
+                patient_condition_form: { type: object }
+                eta: { type: string, format: date-time }
+      responses:
+        '200':
+          description: OK
+components: {}

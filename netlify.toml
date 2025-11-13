@@ -9,10 +9,10 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://your-render-backend-url.com/api/:splat"
+  to = "${RENDER_BACKEND_URL}/api/:splat"
   status = 200
 
 [[redirects]]
   from = "/ws/*"
-  to = "wss://your-render-backend-url.com/ws/:splat"
+  to = "wss://${RENDER_BACKEND_URL_WS}/ws/:splat"
   status = 200
